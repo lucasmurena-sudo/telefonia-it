@@ -385,15 +385,14 @@
 
     <script>
         // ==========================================
-        // CONFIGURACIÓN DE LA APP
+        // CONFIGURACIÓN DE LA APP 
         // ==========================================
         const APP_CONFIG = {
-            scriptUrl: "https://script.google.com/a/macros/pedidosya.com/s/AKfycbzlWqodsi9453cz3Vq7fe2keOyUjkgeC6rCspaCcOL4fRFnmXtTPOZHArmjrzC4Le0l/exec",
-            jwtToken: null
+            scriptUrl: "https://script.google.com/a/macros/pedidosya.com/s/AKfycby3oNMiUqKh-2TV8h43LNnen5Hq3vMUyFVvsoAkGx6XOaMZd6Y-Dx8A5YHriFFJ0v45/exec"
         };
 
         // ==========================================
-        // PROXY MAGICO: SIMULA google.script.run
+        // PROXY MAGICO DIRECTO: SE CONECTA SIN COOKIES
         // ==========================================
         const google = {
             script: {
@@ -412,7 +411,6 @@
                             target._onSuccess = null; 
                             target._onFailure = null;
 
-                            // Empaquetamos los datos con los nombres correctos para el backend
                             let payloadData = {};
                             if (prop === 'actualizarDatoCelda') payloadData = { correo: args[0], columna: args[1], valor: args[2] };
                             else if (prop === 'actualizarDatoRelevarIndex') payloadData = { fila: args[0], columna: args[1], valor: args[2] };
@@ -422,25 +420,11 @@
                             else if (prop === 'resolverLineaRelevarPorFila') payloadData = { filaIndex: args[0] };
                             else if (args.length > 0) payloadData = args[0];
 
-                            // En caso de arrays (como Altas Masivas)
-                            if (Array.isArray(payloadData)) {
-                                payloadData = { lista: payloadData };
-                            }
-                            
-                            // Inyectamos el Token de Google para seguridad y envío de mails
-                            payloadData.userToken = APP_CONFIG.jwtToken;
-                            
-                            // Extraemos tu email directamente del token
-                            if (APP_CONFIG.jwtToken) {
-                                try {
-                                    const base64Url = APP_CONFIG.jwtToken.split('.')[1];
-                                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                                    }).join(''));
-                                    payloadData.userEmail = JSON.parse(jsonPayload).email;
-                                } catch(e) {}
-                            }
+                            if (Array.isArray(payloadData)) { payloadData = { lista: payloadData }; }
+
+                            // Identificadores nativos para el backend
+                            payloadData.userToken = "NATIVO";
+                            payloadData.userEmail = "NATIVO";
 
                             fetch(APP_CONFIG.scriptUrl, {
                                 method: 'POST',
