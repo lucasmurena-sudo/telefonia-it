@@ -385,14 +385,14 @@
 
     <script>
         // ==========================================
-        // CONFIGURACIÓN DE LA APP 
+        // CONFIGURACIÓN DE LA APP
         // ==========================================
         const APP_CONFIG = {
             scriptUrl: "https://script.google.com/a/macros/pedidosya.com/s/AKfycby3oNMiUqKh-2TV8h43LNnen5Hq3vMUyFVvsoAkGx6XOaMZd6Y-Dx8A5YHriFFJ0v45/exec"
         };
 
         // ==========================================
-        // PROXY MAGICO DIRECTO: SE CONECTA SIN COOKIES
+        // ENRUTADOR TUNELADO CON ALTA INMUNIDAD A CORS
         // ==========================================
         const google = {
             script: {
@@ -426,22 +426,27 @@
                             payloadData.userToken = "NATIVO";
                             payloadData.userEmail = "NATIVO";
 
-                            fetch(APP_CONFIG.scriptUrl, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    action: prop,
-                                    data: payloadData
-                                }),
-                                headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
-                            })
-                            .then(res => res.json())
-                            .then(data => {
-                                if(data.status === 'success' && onSuccess) onSuccess(data.data);
-                                else if(data.status === 'error' && onFailure) onFailure(new Error(data.message || 'Error en Apps Script'));
-                            })
-                            .catch(err => {
-                                if(onFailure) onFailure(err);
-                            });
+                            // EJECUCIÓN VÍA SCRIPT DINÁMICO (JSONP) - INMUNE A CORS CORPORATIVOS
+                            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                            window[callbackName] = function(response) {
+                                delete window[callbackName];
+                                document.getElementById(callbackName).remove();
+                                if(response.status === 'success' && onSuccess) onSuccess(response.data);
+                                else if(response.status === 'error' && onFailure) onFailure(new Error(response.message || 'Error en Apps Script'));
+                            };
+
+                            const scriptSrc = APP_CONFIG.scriptUrl + 
+                                              '?action=' + encodeURIComponent(prop) + 
+                                              '&callback=' + callbackName + 
+                                              '&data=' + encodeURIComponent(JSON.stringify(payloadData));
+
+                            const scriptElement = document.createElement('script');
+                            scriptElement.id = callbackName;
+                            scriptElement.src = scriptSrc;
+                            scriptElement.onerror = function() {
+                                if(onFailure) onFailure(new Error("No se pudo conectar con las planillas corporativas (Error de red o CORS)"));
+                            };
+                            document.body.appendChild(scriptElement);
                             
                             return receiver;
                         };
