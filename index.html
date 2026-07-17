@@ -429,12 +429,12 @@
         const google = {
             script: {
                 run: new Proxy({}, {
-                    get: function(target, prop) {
+                    get: function(target, prop, receiver) {
                         if (prop === 'withSuccessHandler') {
-                            return function(cb) { target._onSuccess = cb; return target; };
+                            return function(cb) { target._onSuccess = cb; return receiver; };
                         }
                         if (prop === 'withFailureHandler') {
-                            return function(cb) { target._onFailure = cb; return target; };
+                            return function(cb) { target._onFailure = cb; return receiver; };
                         }
                         // Cuando llamas a una función real (ej. obtenerDatosAPI)
                         return function(...args) {
@@ -451,7 +451,7 @@
                                     token: APP_CONFIG.jwtToken,
                                     params: args
                                 }),
-                                headers: { 'Content-Type': 'text/plain;charset=utf-8' } // Importante para evitar error de CORS
+                                headers: { 'Content-Type': 'text/plain;charset=utf-8' } // Importante para CORS
                             })
                             .then(res => res.json())
                             .then(data => {
@@ -462,7 +462,7 @@
                                 if(onFailure) onFailure(err);
                             });
                             
-                            return target;
+                            return receiver;
                         };
                     }
                 })
@@ -1098,7 +1098,6 @@
         // ARRANQUE INICIAL PARCIAL
         agregarFilaMasivaVacia();
         loadDraft(); 
-        // La sincro total ahora espera a que el usuario se loguee en el bloque handleCredentialResponse
     </script>
 </body>
 </html>
